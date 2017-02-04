@@ -10,6 +10,7 @@
     "php": ">=5.5.9",
     "composer/semver": "^1.4",
     "consolidation/robo": "^1.0.5",
+    "consolidation/annotated-command": "dev-commandfile-path as 2.4.0",
     "guzzlehttp/guzzle": "^6.2",
     "psy/psysh": "^0.8",
     "symfony/finder": "~2.7|^3.2",
