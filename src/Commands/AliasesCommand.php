@@ -37,6 +37,11 @@ class AliasesCommand extends TerminusCommand implements ContainerAwareInterface
             $location = '~/.drush/pantheon.aliases.drushrc.php';
         }
 
+        // Confirm before overwriting.
+        if (!$this->confirm('Are you sure you overwrite your current aliases at {location}.', ['location' => $location])) {
+            return;
+        }
+
         $this->getContainer()->get(LocalMachineHelper::class)->writeFile($location, $aliases);
         $this->log()->notice('Aliases file written to {location}.', ['location' => $location,]);
     }
