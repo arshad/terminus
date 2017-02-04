@@ -23,19 +23,36 @@ class PluginAutoload implements InitializeHookInterface, LoggerAwareInterface
      */
     public function initialize(InputInterface $input, AnnotationData $annotationData)
     {
-        $path = $annotationData['_path'];
+        $autoloadFile = $this->findAutoloadFile($annotationData['_path']);
+        if (!empty($autoloadFile)) {
+            include $autoloadFile;
+        }
+    }
+
+    /**
+     * Given the path to the source file being loaded, return the
+     * path to the autoload file to load.
+     */
+    protected function findAutoloadFile($path)
+    {
         if (!$path) {
             return;
         }
-
-        $terminusSrcDir = $this->findTerminusSrcDir($path);
+        $terminusSrcDir = $this->findTerminusSrcDir();
         if (!$terminusSrcDir) {
+            $this->logger->debug(
+                'Plugin Autoload: Could not find Terminus source directory.'
+            );
             return;
         }
 
         // If the commandfile path is inside Terminus, then
         // the autoload file has already been loaded.
         if ($this->pathInside($path, $terminusSrcDir)) {
+            $this->logger->debug(
+                'Plugin Autoload: %dir is a Terminus source file.',
+                ['dir' => $path]
+            );
             return;
         }
 
@@ -44,11 +61,15 @@ class PluginAutoload implements InitializeHookInterface, LoggerAwareInterface
         // find a base directory for the plugin.
         $pluginBaseDir = $this->findPluginBaseDir($path);
         if (!$pluginBaseDir) {
+            $this->logger->warning(
+                'Plugin Autoload: Could not find the plugin base dir for %dir.',
+                ['dir' => $path]
+            );
             return;
         }
 
         // If there is no autoload file, then we might as well give up
-        $autoloadFile = $this->findAutoload($pluginBaseDir);
+        $autoloadFile = $this->checkAutoloadPath($pluginBaseDir);
         if (!$autoloadFile) {
             // TODO: Maybe we should give a warning if there IS a composer.lock,
             // but there is NOT an autoload file, so that we can tell the
@@ -57,6 +78,10 @@ class PluginAutoload implements InitializeHookInterface, LoggerAwareInterface
             // at this point anyway. It might be better to have the plugin
             // manager take care of this at install time. This will happen
             // automatically if installing via 'composer create-project'.
+            $this->logger->debug(
+                'Plugin Autoload: %dir does not have an autoload file.',
+                ['dir' => $pluginBaseDir]
+            );
             return;
         }
 
@@ -64,13 +89,13 @@ class PluginAutoload implements InitializeHookInterface, LoggerAwareInterface
         // validate that it is safe to load.
         $this->validateComposerLock($pluginBaseDir, $terminusSrcDir);
 
-        include $autoloadFile;
+        return $autoloadFile;
     }
 
     /**
      * Determine whether the provided path is inside Terminus itself.
      */
-    protected function findTerminusSrcDir($path)
+    protected function findTerminusSrcDir()
     {
         // The Terminus class is located at the root of our 'src'
         // directory. Get the path to the class to determine
@@ -94,8 +119,8 @@ class PluginAutoload implements InitializeHookInterface, LoggerAwareInterface
             return;
         }
 
-        // Also stop scanning if we reach the .terminus directory.
-        if (basename($path) == '.terminus') {
+        // Also stop scanning if we reach the '.terminus' or 'plugins' directory.
+        if ((basename($path) == '.terminus') || (basename($path) == 'plugins')) {
             return;
         }
 
@@ -121,11 +146,11 @@ class PluginAutoload implements InitializeHookInterface, LoggerAwareInterface
         throw new TerminusException("Autoloading plugin dependencies is not supported yet.");
     }
 
-    protected function findAutoload($path)
+    protected function checkAutoloadPath($path)
     {
         $autoloadFile = "$path/vendor/autoload.php";
         if (file_exists($autoloadFile)) {
             return $autoloadFile;
         }
-    }
+   }
 }
