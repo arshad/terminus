@@ -51,7 +51,6 @@ class PluginAutoloadTest extends \PHPUnit_Framework_TestCase
 
         $autoloadFileAgain = $this->callProtected($this->autoload, 'findAutoloadFile', [$path]);
         $this->assertEquals($this->plugins_dir . 'with-autoload/vendor/autoload.php', $autoloadFileAgain);
-
     }
 
     public static function autoloadTestValues()
@@ -88,11 +87,10 @@ class PluginAutoloadTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($expected, $actual);
     }
 
-    function callProtected($object, $method, $args = [])
+    public function callProtected($object, $method, $args = [])
     {
         $r = new \ReflectionMethod($object, $method);
         $r->setAccessible(true);
         return $r->invokeArgs($object, $args);
     }
-
 }

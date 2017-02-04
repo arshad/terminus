@@ -152,5 +152,5 @@ class PluginAutoload implements InitializeHookInterface, LoggerAwareInterface
         if (file_exists($autoloadFile)) {
             return $autoloadFile;
         }
-   }
+    }
 }
